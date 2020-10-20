@@ -21,7 +21,7 @@ n_components = 2
 perplexities = [4, 6, 9, 14, 21, 30, 45, 66, 100]
 
 # 設定S曲線資料點
-X, color = datasets.samples_generator.make_s_curve(n_samples, random_state=0)
+X, color = datasets.make_s_curve(n_samples, random_state=0)
 
 # 繪製資料原圖
 ax = subplots[0][0]
