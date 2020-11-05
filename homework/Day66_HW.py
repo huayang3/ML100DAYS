@@ -21,8 +21,8 @@ from keras.layers import Layer
 #config = model.get_config()
 #print(config)
 
-print(keras.backend)
-#print(keras.fuzz factor)
+print(keras.backend.backend())
+print(keras.backend.epsilon())
 
 
 #設定浮點運算值
