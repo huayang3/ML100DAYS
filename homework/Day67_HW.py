@@ -11,7 +11,7 @@ from keras.datasets import cifar100
 import numpy as np
 np.random.seed(10)
 
-(x_img_train,y_label_train), (x_img_test, y_label_test)=cifar10.load_data()
+(x_img_train,y_label_train), (x_img_test, y_label_test)=cifar100.load_data()
 
 print('train:',len(x_img_train))
 print('test :',len(x_img_test))
@@ -47,16 +47,16 @@ print('test :',len(x_img_test))
 #plot_images_labels_prediction(x_img_train,y_label_train,[],0)
 #
 #
-#x_img_train[0][0][0]
-#
-#x_img_train_normalize = x_img_train.astype('float32') / 255.0
-#x_img_test_normalize = x_img_test.astype('float32') / 255.0
-#
-#x_img_train_normalize[0][0][0]
-#
-#print(y_label_train[:5])
-#
-#from keras.utils import np_utils
-#y_label_train_OneHot = np_utils.to_categorical(y_label_train)
-#y_label_test_OneHot = np_utils.to_categorical(y_label_test)
-#y_label_train_OneHot[:5]
+x_img_train[0][0][0]
+
+x_img_train_normalize = x_img_train.astype('float32') / 255.0
+x_img_test_normalize = x_img_test.astype('float32') / 255.0
+
+x_img_train_normalize[0][0][0]
+
+print(y_label_train[:5])
+
+from keras.utils import np_utils
+y_label_train_OneHot = np_utils.to_categorical(y_label_train)
+y_label_test_OneHot = np_utils.to_categorical(y_label_test)
+y_label_train_OneHot[:5]
