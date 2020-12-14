@@ -55,7 +55,7 @@ def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128]):
 LEARNING_RATE = 0.01
 EPOCHS = 20
 BATCH_SIZE = 256
-MOMENTUM = 0.95 #[0.01, 0.5, 0.95, 1.0, 1.5]
+MOMENTUM = [0.1, 0.5, 0.95, 1.0]
 
 results = {}
 """
