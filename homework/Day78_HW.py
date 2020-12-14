@@ -16,7 +16,7 @@ train, test = keras.datasets.cifar10.load_data()
 
 ## 資料前處理
 def preproc_x(x, flatten=True):
-    x = x / 255.
+    x = 2*(((x - x.min()) / (x.max() - x.min()))-0.5)
     if flatten:
         x = x.reshape((len(x), -1))
     return x
