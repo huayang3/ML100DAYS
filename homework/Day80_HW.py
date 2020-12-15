@@ -52,23 +52,23 @@ def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128]):
 
 ## 超參數設定
 LEARNING_RATE = 0.01
-EPOCHS = 2
+EPOCHS = 20
 BATCH_SIZE = 256
 MOMENTUM = 0.95
-
-OPTI=[keras.optimizers.SGD(lr=0.01, momentum=0.0, decay=0.0, nesterov=False), keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=None, decay=0.0), keras.optimizers.Adagrad(lr=0.01, epsilon=None, decay=0.0), keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)]
+OPTIMIZER = [keras.optimizers.SGD, keras.optimizers.RMSprop, keras.optimizers.Adagrad, keras.optimizers.Adam]
 
 results = {}
 """
 使用迴圈，建立不同 MOMENTUM 的模型並訓練
 """
-for opti in OPTI:
+for opti in OPTIMIZER:
     keras.backend.clear_session() # 把舊的 Graph 清掉
-    #print("Experiment with OPTI = %.6f" % (opti))
+    print("Experiment with  Optimizer = %s" % str(opti))
     model = build_mlp(input_shape=x_train.shape[1:])
     model.summary()
+    optimizer = opti(lr=LEARNING_RATE)
     #optimizer = keras.optimizers.SGD(lr=LEARNING_RATE, nesterov=True, momentum=mtum)
-    model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer=opti)
+    model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer=optimizer)
 
     model.fit(x_train, y_train, 
               epochs=EPOCHS, 
