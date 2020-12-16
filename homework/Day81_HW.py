@@ -7,6 +7,7 @@ Created on Tue Dec 15 19:42:42 2020
 
 import os
 import keras
+import itertools
 
 # 本範例不需使用 GPU, 將 GPU 設定為 "無"
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -37,12 +38,15 @@ x_test = preproc_x(x_test)
 y_train = preproc_y(y_train)
 y_test = preproc_y(y_test)  
 
-from keras.regularizers import l1, l2, l1_l2
+#from keras.regularizers import l1, l2, l1_l2
+
+
+from keras.regularizers import l1_l2
 
 """
-建立神經網路，並加入 L1 或 L2
+建立神經網路
 """
-def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128], l2_ratio=1e-4):
+def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128], l1_ratio=0.0, l2_ratio=0.0):
     input_layer = keras.layers.Input(input_shape)
     
     for i, n_units in enumerate(num_neurons):
@@ -50,12 +54,12 @@ def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128], l2_rati
             x = keras.layers.Dense(units=n_units, 
                                    activation="relu", 
                                    name="hidden_layer"+str(i+1), 
-                                   kernel_regularizer=l2(l2_ratio))(input_layer)
+                                   kernel_regularizer=l1_l2(l1=l1_ratio, l2=l2_ratio))(input_layer)
         else:
             x = keras.layers.Dense(units=n_units, 
                                    activation="relu", 
                                    name="hidden_layer"+str(i+1),
-                                   kernel_regularizer=l2(l2_ratio))(x)
+                                   kernel_regularizer=l1_l2(l1=l1_ratio, l2=l2_ratio))(x)
     
     out = keras.layers.Dense(units=output_units, activation="softmax", name="output")(x)
     
@@ -64,19 +68,17 @@ def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128], l2_rati
 
 ## 超參數設定
 LEARNING_RATE = 1e-3
-EPOCHS = 50
+EPOCHS = 10
 BATCH_SIZE = 256
 MOMENTUM = 0.95
-L2_EXP = [1e-2, 1e-4, 1e-8, 1e-12]
+L1_EXP = [1e-2, 1e-4, 1e-8, 1e-12, 0.0]
+L2_EXP = [1e-2, 1e-4, 1e-8, 1e-12, 0.0]
 
 results = {}
-"""
-使用迴圈建立不同的帶不同 L1/L2 的模型並訓練
-"""
-for regulizer_ratio in L2_EXP:
+for l1r, l2r in itertools.product(L1_EXP, L2_EXP):
     keras.backend.clear_session() # 把舊的 Graph 清掉
-    print("Experiment with Regulizer = %.6f" % (regulizer_ratio))
-    model = build_mlp(input_shape=x_train.shape[1:], l2_ratio=regulizer_ratio)
+    print("Experiment with L1 = %.6f, L2 = %.6f" % (l1r, l2r))
+    model = build_mlp(input_shape=x_train.shape[1:], l1_ratio=l1r, l2_ratio=l2r)
     model.summary()
     optimizer = keras.optimizers.SGD(lr=LEARNING_RATE, nesterov=True, momentum=MOMENTUM)
     model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer=optimizer)
@@ -93,7 +95,7 @@ for regulizer_ratio in L2_EXP:
     train_acc = model.history.history["accuracy"]
     valid_acc = model.history.history["val_accuracy"]
     
-    exp_name_tag = "exp-l2-%s" % str(regulizer_ratio)
+    exp_name_tag = "exp-l1-%s-l2-%s" % (str(l1r), str(l2r))
     results[exp_name_tag] = {'train-loss': train_loss,
                              'valid-loss': valid_loss,
                              'train-acc': train_acc,
