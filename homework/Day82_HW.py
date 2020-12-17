@@ -41,7 +41,7 @@ from keras.layers import Dropout
 """
 建立神經網路，並加入 dropout layer
 """
-def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128], drp_ratio):
+def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128], drp_ratio=0.25):
     input_layer = keras.layers.Input(input_shape)
     
     for i, n_units in enumerate(num_neurons):
@@ -92,7 +92,7 @@ for dropout in Dropout_EXP:
     train_acc = model.history.history["accuracy"]
     valid_acc = model.history.history["val_accuracy"]
     
-    exp_name_tag = "exp-opti-%s" % str(opti)
+    exp_name_tag = "exp-dropout-%s" % str(dropout)
     results[exp_name_tag] = {'train-loss': train_loss,
                              'valid-loss': valid_loss,
                              'train-acc': train_acc,
