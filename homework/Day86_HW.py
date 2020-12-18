@@ -66,61 +66,52 @@ LEARNING_RATE = 1e-3
 EPOCHS = 50
 BATCH_SIZE = 1024
 MOMENTUM = 0.95
-SAVEBESTONLY=[False, True]
-
-results = {}
-"""
-# 載入 Callbacks, 並將監控目標設為 validation loss, 且只存最佳參數時的模型
-"""
+# 載入 Callbacks
 from keras.callbacks import ModelCheckpoint
 
-for save_best_only in SAVEBESTONLY:
-    keras.backend.clear_session() # 把舊的 Graph 清掉
-    model_ckpt = ModelCheckpoint(filepath="./tmp.h5", 
-                                 monitor="val_loss", 
-                                 save_best_only=save_best_only)
-    
-    model = build_mlp(input_shape=x_train.shape[1:])
-    model.summary()
-    optimizer = keras.optimizers.SGD(lr=LEARNING_RATE, nesterov=True, momentum=MOMENTUM)
-    model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer=optimizer)
-    
-    model.fit(x_train, y_train, 
-              epochs=EPOCHS, 
-              batch_size=BATCH_SIZE, 
-              validation_data=(x_test, y_test), 
-              shuffle=True,
-              callbacks=[model_ckpt]
-             )
-    
-    # Collect results
-    train_loss = model.history.history["loss"]
-    valid_loss = model.history.history["val_loss"]
-    train_acc = model.history.history["accuracy"]
-    valid_acc = model.history.history["val_accuracy"]
-    
-    exp_name_tag = "save_best_only-%s" % str(save_best_only) 
-    results[exp_name_tag] = {'train-loss': train_loss,
-                             'valid-loss': valid_loss,
-                             'train-acc': train_acc,
-                             'valid-acc': valid_acc}
-    
-import matplotlib.pyplot as plt
-#%matplotlib inline
-color_bar = ["r", "g", "b", "y", "m", "k"]
+model_ckpt = ModelCheckpoint(filepath="./tmp.h5", 
+                             monitor="val_loss", 
+                             save_best_only=True)
 
-plt.figure(figsize=(8,6))
-for i, cond in enumerate(results.keys()):
-    plt.plot(range(len(results[cond]['train-loss'])),results[cond]['train-loss'], '-', label=cond, color=color_bar[i])
-    plt.plot(range(len(results[cond]['valid-loss'])),results[cond]['valid-loss'], '--', label=cond, color=color_bar[i])
-plt.title("Loss")
-plt.legend()
-plt.show()
+model = build_mlp(input_shape=x_train.shape[1:])
+model.summary()
+optimizer = keras.optimizers.SGD(lr=LEARNING_RATE, nesterov=True, momentum=MOMENTUM)
+model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer=optimizer)
 
-plt.figure(figsize=(8,6))
-for i, cond in enumerate(results.keys()):
-    plt.plot(range(len(results[cond]['train-acc'])),results[cond]['train-acc'], '-', label=cond, color=color_bar[i])
-    plt.plot(range(len(results[cond]['valid-acc'])),results[cond]['valid-acc'], '--', label=cond, color=color_bar[i])
-plt.title("Accuracy")
-plt.legend()
-plt.show()
+model.fit(x_train, y_train, 
+          epochs=EPOCHS, 
+          batch_size=BATCH_SIZE, 
+          validation_data=(x_test, y_test), 
+          shuffle=True,
+          callbacks=[model_ckpt]
+         )
+model.save("final_model.h5")
+model.save_weights("model_weights.h5")
+# Collect results
+train_loss = model.history.history["loss"]
+valid_loss = model.history.history["val_loss"]
+train_acc = model.history.history["accuracy"]
+valid_acc = model.history.history["val_accuracy"]
+
+pred_final = model.predict(x_test)
+# Load back
+model = keras.models.load_model("./tmp.h5")
+pred_loadback = model.predict(x_test)
+
+from sklearn.metrics import accuracy_score
+
+final_model_acc = accuracy_score(y_true=y_test.argmax(axis=-1), y_pred=pred_final.argmax(axis=-1))
+loadback_acc = accuracy_score(y_true=y_test.argmax(axis=-1), y_pred=pred_loadback.argmax(axis=-1))
+
+print("Accuracy of final weights: %.3f" % final_model_acc)
+print("Accuracy of best weights: %.3f" % loadback_acc)
+
+new_model = build_mlp(input_shape=x_train.shape[1:])
+new_model_pred = new_model.predict(x_test)
+new_model_acc = accuracy_score(y_true=y_test.argmax(axis=-1), y_pred=new_model_pred.argmax(axis=-1))
+print("Accuracy of best weights: %.3f" % new_model_acc)
+
+new_model.load_weights("./model_weights.h5")
+new_model_pred = new_model.predict(x_test)
+new_model_loadback_acc = accuracy_score(y_true=y_test.argmax(axis=-1), y_pred=new_model_pred.argmax(axis=-1))
+print("Accuracy of best weights: %.3f" % new_model_loadback_acc)
