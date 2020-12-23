@@ -70,13 +70,10 @@ MOMENTUM = 0.95
 import tensorflow as tf
 import keras.backend as K
 
-"""
-# 撰寫自定義的 loss function: focal loss (https://blog.csdn.net/u014380165/article/details/77019084)
-"""
-def focal_loss(gamma=2., alpha=4.):
+def combined_loss(gamma=2., alpha=4., ce_weights=0.7, fcl_weights=0.3):
     gamma = float(gamma)
     alpha = float(alpha)
-    def focal_loss_fixed(y_true, y_pred):
+    def CE_focal_loss(y_true, y_pred):
         """Focal loss for multi-classification
         FL(p_t)=-alpha(1-p_t)^{gamma}ln(p_t)
         """
@@ -89,44 +86,63 @@ def focal_loss(gamma=2., alpha=4.):
         weight = tf.multiply(y_true, tf.pow(tf.subtract(1., model_out), gamma))
         fl = tf.multiply(alpha, tf.multiply(weight, ce))
         reduced_fl = tf.reduce_max(fl, axis=1)
-        return tf.reduce_mean(reduced_fl)
-    return focal_loss_fixed
+        
+        ce_loss = keras.losses.categorical_crossentropy(y_true, y_pred)
+        return (ce_weights*ce_loss) + (fcl_weights*tf.reduce_mean(reduced_fl) )
+    return CE_focal_loss
+
+ce_weights_list = [0., 0.3, 0.5, 0.7, 1]
 
 
-model = build_mlp(input_shape=x_train.shape[1:])
-model.summary()
-optimizer = keras.optimizers.SGD(lr=LEARNING_RATE, nesterov=True, momentum=MOMENTUM)
-"""
-# 在 compile 時，使用自定義的 loss function
-"""
-model.compile(loss=focal_loss(), metrics=["accuracy"], optimizer=optimizer)
+import itertools
+results = {}
 
-model.fit(x_train, y_train, 
-          epochs=EPOCHS, 
-          batch_size=BATCH_SIZE, 
-          validation_data=(x_test, y_test), 
-          shuffle=True
-         )
+for i, ce_w in enumerate(ce_weights_list):
+    print("Numbers of exp: %i, ce_weight: %.2f" % (i, ce_w))
 
-# Collect results
-train_loss = model.history.history["loss"]
-valid_loss = model.history.history["val_loss"]
-train_acc = model.history.history["accuracy"]
-valid_acc = model.history.history["val_accuracy"]
+    model = build_mlp(input_shape=x_train.shape[1:])
+    model.summary()
+    optimizer = keras.optimizers.SGD(lr=LEARNING_RATE, nesterov=True, momentum=MOMENTUM)
+    model.compile(loss=combined_loss(ce_weights=ce_w, fcl_weights=1.-ce_w), 
+                  metrics=["accuracy"], optimizer=optimizer)
 
-valid_f1sc = model.history.history['val_f1sc']
+    model.fit(x_train, y_train, 
+              epochs=EPOCHS, 
+              batch_size=BATCH_SIZE, 
+              validation_data=(x_test, y_test), 
+              shuffle=True
+             )
+    
+    # Collect results
+    exp_name_tag = ("exp-%s" % (i))
+    results[exp_name_tag] = {'train-loss': model.history.history["loss"],
+                             'valid-loss': model.history.history["val_loss"],
+                             'train-acc': model.history.history["accuracy"],
+                             'valid-acc': model.history.history["val_accuracy"]}
 
 import matplotlib.pyplot as plt
-#%matplotlib inline
+import matplotlib.cm as mplcm
+import matplotlib.colors as colors
+#matplotlib inline
+NUM_COLORS = len(results.keys())
 
-plt.plot(range(len(train_loss)), train_loss, label="train loss")
-plt.plot(range(len(valid_loss)), valid_loss, label="valid loss")
-plt.legend()
+cm = plt.get_cmap('gist_rainbow')
+cNorm  = colors.Normalize(vmin=0, vmax=NUM_COLORS-1)
+scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
+color_bar = [scalarMap.to_rgba(i) for i in range(NUM_COLORS)]
+
+plt.figure(figsize=(8,6))
+for i, cond in enumerate(results.keys()):
+    plt.plot(range(len(results[cond]['train-loss'])),results[cond]['train-loss'], '-', label=cond, color=color_bar[i])
+    plt.plot(range(len(results[cond]['valid-loss'])),results[cond]['valid-loss'], '--', label=cond, color=color_bar[i])
 plt.title("Loss")
+plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.show()
 
-plt.plot(range(len(train_acc)), train_acc, label="train accuracy")
-plt.plot(range(len(valid_acc)), valid_acc, label="valid accuracy")
-plt.legend()
+plt.figure(figsize=(8,6))
+for i, cond in enumerate(results.keys()):
+    plt.plot(range(len(results[cond]['train-acc'])),results[cond]['train-acc'], '-', label=cond, color=color_bar[i])
+    plt.plot(range(len(results[cond]['valid-acc'])),results[cond]['valid-acc'], '--', label=cond, color=color_bar[i])
 plt.title("Accuracy")
+plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.show()
