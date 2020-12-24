@@ -109,3 +109,11 @@ SVM_hog.train(x_train_hog, cv2.ml.ROW_SAMPLE, y_train)
 # prediction
 _, y_hog_train = SVM_hog.predict(x_train_hog)
 _, y_hog_test = SVM_hog.predict(x_test_hog)
+
+print("-----Histogram result-----")
+print("Training acc:", 100 * (y_hist_train == y_train).sum() / len(y_train), "%")
+print("Testing acc:", 100 * (y_hist_test == y_test ).sum() / len(y_test), "%")
+
+print("-----HOG result-----")
+print("Training acc:", 100 * (y_hog_train == y_train).sum() / len(y_train), "%")
+print("Testing acc:", 100 * (y_hog_test == y_test ).sum() / len(y_test), "%")
