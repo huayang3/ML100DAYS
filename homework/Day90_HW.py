@@ -46,9 +46,9 @@ plt.ylabel("# of Pixels")
 # 對於所有 channel
 for (chan, color) in zip(chans, colors):
     # 計算該 channel 的直方圖
-    hist = cv2.calcHist([chan], [0], None, [16,16,16], [0, 256])
- 
+    hist = cv2.calcHist([chan], [0], None, [16], [0, 256])
+    print("顏色",color, "在 [16, 32] 這個 bin 中有：", hist[1], "個")
     # 畫出該 channel 的直方圖
     plt.plot(hist, color = color)
-    plt.xlim([0, 256])
+    plt.xlim([0, 16])
 plt.show()
