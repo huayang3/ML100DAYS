@@ -111,3 +111,7 @@ history = model.fit(x_train, y_train,
 score = model.evaluate(x_test, y_test, verbose=0)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
+
+'''
+DNN 的參數量較多，可以看出 CNN 在做卷機時，透過較小的參數量就可以逐步縮小影像大小，讓最後再接上 Dense 層時不要有過多的參數。
+'''
