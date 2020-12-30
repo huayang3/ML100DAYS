@@ -58,38 +58,35 @@ print(softmax(x))
 plt.plot(x, softmax(x), 'r')
 plt.show()
 
+
 #寫出 ReLU & dReLU 一階導數
-#ReLU = max(0,x)
 def ReLU(x):
-    if x > 0:
-        return x
-    else:
-        return 0
+    #print(abs(x))
+    #print(x>0)
+    #print(abs(x) * (x > 0))
+    return abs(x) * (x > 0)
 
-
-#Sigmoid 微分
 def dReLU(x):
-    if x > 0:
-        return 1
-    else:
-        return 0
+    return (1 * (x > 0))
 
+#ReLU(-1)
 # linespace generate an array from start and stop value
-# with requested number of elements. Example 10 elements or 100 elements.
+# with requested number of elements.
 x = plt.linspace(-10,10,100)
 
 # prepare the plot, associate the color r(ed) or b(lue) and the label 
-plt.plot(x, ReLU(x), 'b', label='linspace(-10,10,10)')
+plt.plot(x, ReLU(x), 'r')
+plt.plot(x, dReLU(x), 'b')
+
 
 # Draw the grid line in background.
 plt.grid()
 
-# 顯現圖示的Title
+# Title
 plt.title('ReLU Function')
 
-#resize the X and Y axes
-plt.gca().xaxis.set_major_locator(plt.MultipleLocator(1))
-#plt.gca().yaxis.set_major_locator(plt.MultipleLocator(0.1))
- 
+# write the ReLU formula
+plt.text(0, 9, r'$f(x)= (abs(x) * (x > 0))$', fontsize=15)
+
 # create the graph
 plt.show()
