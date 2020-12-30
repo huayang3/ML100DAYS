@@ -36,7 +36,8 @@ x_test = preproc_x(x_test)
 y_train = preproc_y(y_train)
 y_test = preproc_y(y_test)
 
-from keras.layers import BatchNormalization, Activation, Dropout, regularizers
+from keras.layers import BatchNormalization, Activation, Dropout
+from keras.regularizers import l1_l2, l2, l1
 
 def build_mlp(input_shape, 
               output_units=10, 
@@ -49,7 +50,7 @@ def build_mlp(input_shape,
     for i, n_units in enumerate(num_neurons):
         if i == 0:
             x = keras.layers.Dense(units=n_units, 
-                                   kernel_regularizer=regularizers.l2(l2_ratio),
+                                   kernel_regularizer=l2(l2_ratio),
                                    name="hidden_layer"+str(i+1))(input_layer)
 
             if use_bn:
@@ -59,7 +60,7 @@ def build_mlp(input_shape,
 
         else:
             x = keras.layers.Dense(units=n_units, 
-                                   kernel_regularizer=regularizers.l2(l2_ratio),
+                                   kernel_regularizer=l2(l2_ratio),
                                    name="hidden_layer"+str(i+1))(x)
             if use_bn:
                 x = BatchNormalization()(x)
