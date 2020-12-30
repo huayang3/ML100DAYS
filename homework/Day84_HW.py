@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 17 19:37:07 2020
+Created on Wed Dec 30 20:21:58 2020
 
 @author: hua_yang
 """
 
 import os
 import keras
+from keras.layers import BatchNormalization, Dropout
 
-# 本範例不需使用 GPU, 將 GPU 設定為 "無"
+# Disable GPU
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 train, test = keras.datasets.cifar10.load_data()
@@ -28,71 +29,56 @@ def preproc_y(y, num_classes=10):
 x_train, y_train = train
 x_test, y_test = test
 
-# 資料前處理 - X 標準化
+# Preproc the inputs
 x_train = preproc_x(x_train)
 x_test = preproc_x(x_test)
 
-# 資料前處理 -Y 轉成 onehot
+# Preprc the outputs
 y_train = preproc_y(y_train)
 y_test = preproc_y(y_test)
 
-from keras.layers import BatchNormalization
-
-"""
-建立神經網路，並加入 BN layer
-"""
 def build_mlp(input_shape, output_units=10, num_neurons=[512, 256, 128]):
     input_layer = keras.layers.Input(input_shape)
     
     for i, n_units in enumerate(num_neurons):
         if i == 0:
-            x = keras.layers.Dense(units=n_units, 
-                                   activation="relu", 
-                                   name="hidden_layer"+str(i+1))(input_layer)
+            x = keras.layers.Dense(units=n_units, activation="relu", name="hidden_layer"+str(i+1))(input_layer)
             x = BatchNormalization()(x)
         else:
-            x = keras.layers.Dense(units=n_units, 
-                                   activation="relu", 
-                                   name="hidden_layer"+str(i+1))(x)
+            x = keras.layers.Dense(units=n_units, activation="relu", name="hidden_layer"+str(i+1))(x)
             x = BatchNormalization()(x)
     
+    x = Dropout(0.5)(x)
     out = keras.layers.Dense(units=output_units, activation="softmax", name="output")(x)
     
     model = keras.models.Model(inputs=[input_layer], outputs=[out])
     return model
 
 ## 超參數設定
-LEARNING_RATE = 1e-3
-EPOCHS = 50
-BATCH_SIZE = 1024
+LEARNING_RATE = 0.01
+EPOCHS = 20
+BATCH_SIZE = 256
 MOMENTUM = 0.95
-PATIENCE=[5,10,25]
-
-"""
-# 載入 Callbacks, 並將 monitor 設定為監控 validation loss
-"""
-from keras.callbacks import EarlyStopping
+OPTIMIZER = [keras.optimizers.SGD, keras.optimizers.RMSprop, keras.optimizers.Adagrad, keras.optimizers.Adam]
 
 results = {}
-for patience in PATIENCE:
-    
-    earlystop = EarlyStopping(monitor="val_loss", 
-                              patience=patience, 
-                              verbose=1
-                              )
-    
-    print("Experiment with  PATIENCE = %s" % str(patience))
+"""
+使用迴圈，建立不同 MOMENTUM 的模型並訓練
+"""
+for opti in OPTIMIZER:
+    keras.backend.clear_session() # 把舊的 Graph 清掉
+    print("Experiment with  Optimizer = %s" % str(opti))
     model = build_mlp(input_shape=x_train.shape[1:])
     model.summary()
-    optimizer = keras.optimizers.SGD(lr=LEARNING_RATE, nesterov=True, momentum=MOMENTUM)
+    optimizer = opti(lr=LEARNING_RATE)
+    #optimizer = keras.optimizers.SGD(lr=LEARNING_RATE, nesterov=True, momentum=mtum)
     model.compile(loss="categorical_crossentropy", metrics=["accuracy"], optimizer=optimizer)
 
     model.fit(x_train, y_train, 
               epochs=EPOCHS, 
               batch_size=BATCH_SIZE, 
               validation_data=(x_test, y_test), 
-              shuffle=True,
-              callbacks=[earlystop])
+              shuffle=True)
     
     # Collect results
     train_loss = model.history.history["loss"]
@@ -100,13 +86,12 @@ for patience in PATIENCE:
     train_acc = model.history.history["accuracy"]
     valid_acc = model.history.history["val_accuracy"]
     
-    exp_name_tag = "patience-%s" % str(patience) 
+    exp_name_tag = "exp-opti-%s" % str(opti)
     results[exp_name_tag] = {'train-loss': train_loss,
                              'valid-loss': valid_loss,
                              'train-acc': train_acc,
                              'valid-acc': valid_acc}
-
-
+    
 import matplotlib.pyplot as plt
 #%matplotlib inline
 color_bar = ["r", "g", "b", "y", "m", "k"]
@@ -116,5 +101,13 @@ for i, cond in enumerate(results.keys()):
     plt.plot(range(len(results[cond]['train-loss'])),results[cond]['train-loss'], '-', label=cond, color=color_bar[i])
     plt.plot(range(len(results[cond]['valid-loss'])),results[cond]['valid-loss'], '--', label=cond, color=color_bar[i])
 plt.title("Loss")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(8,6))
+for i, cond in enumerate(results.keys()):
+    plt.plot(range(len(results[cond]['train-acc'])),results[cond]['train-acc'], '-', label=cond, color=color_bar[i])
+    plt.plot(range(len(results[cond]['valid-acc'])),results[cond]['valid-acc'], '--', label=cond, color=color_bar[i])
+plt.title("Accuracy")
 plt.legend()
 plt.show()
