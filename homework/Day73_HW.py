@@ -6,7 +6,7 @@ Created on Wed Dec 30 14:36:05 2020
 """
 
 cur_x = 3 # The algorithm starts at x=3
-lr = 0.01 # Learning rate
+lr = 0.1 # Learning rate
 precision = 0.000001 #This tells us when to stop the algorithm
 previous_step_size = 1 #
 max_iters = 10000 # maximum number of iterations
