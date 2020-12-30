@@ -3,6 +3,8 @@
 Created on Tue Dec 29 21:08:36 2020
 
 @author: hua_yang
+
+FROM Day100_transfer_learning_Ans.ipynb
 """
 
 import keras
